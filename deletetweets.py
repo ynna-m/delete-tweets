@@ -29,7 +29,8 @@ class TweetDestroyer(object):
 
 
 class TweetReader(object):
-    def __init__(self, reader, date=None, restrict=None, spare=[], min_likes=0, min_retweets=0):
+    def __init__(self, reader, date=None, restrict=None, spare=[], min_likes=0, min_retweets=0,
+                 spare_list=None, own_media=False, rt_media=False):
         self.reader = reader
         if date is not None:
             self.date = parse(date, ignoretz=True).date()
@@ -37,8 +38,15 @@ class TweetReader(object):
         self.spare = spare
         self.min_likes = 0 if min_likes is None else min_likes
         self.min_retweets = 0 if min_retweets is None else min_retweets
+        if spare_list is None:
+            self.spare_list = "to_save.txt"
+        else:
+            self.spare_list = spare_list
+        self.own_media = False if own_media is None else own_media
+        self.rt_media = False if rt_media is None else rt_media
 
     def read(self):
+        sparedcount = 0
         for row in self.reader:
             if row.get("created_at", "") != "":
                 tweet_date = parse(row["created_at"], ignoretz=True).date()
@@ -50,20 +58,45 @@ class TweetReader(object):
             if (self.restrict == "retweet" and
                     not row.get("full_text").startswith("RT @")) or \
                     (self.restrict == "reply" and
-                     row.get("in_reply_to_user_id_str") == ""):
+                     row.get("in_reply_to_user_id_str") is None):
+                sparedcount = sparedcount + 1
                 continue
 
             if row.get("id_str") in self.spare:
+                sparedcount = sparedcount + 1
                 continue
 
             if (self.min_likes > 0 and int(row.get("favorite_count")) >= self.min_likes) or \
                     (self.min_retweets > 0 and int(row.get("retweet_count")) >= self.min_retweets):
+                sparedcount = sparedcount + 1
+                continue
+
+            skip = False
+            with open(self.spare_list,"r") as spare_idlist:
+                for line in spare_idlist:
+                    if row.get("id_str") in line:
+                        skip = True
+                        break
+            if skip is True:
+                sparedcount = sparedcount + 1
+                continue
+
+            if (self.own_media and row.get("entities").get("media")) and \
+                    (not row.get("full_text").startswith("RT @") or \
+                     row.get("in_reply_to_user_id_str") is not None):
+                sparedcount = sparedcount + 1
+                continue
+
+            if (self.rt_media and row.get("entities").get("media")) and \
+                    row.get("full_text").startswith("RT @"):
+                sparedcount = sparedcount + 1
                 continue
 
             yield row
+        print("Number of Tweets spared from deletion %s:" % sparedcount)
 
 
-def delete(tweetjs_path, date, r, s, min_l, min_r):
+def delete(tweetjs_path, date, r, s, min_l, min_r, spare_l, o_m, rt_m):
     with io.open(tweetjs_path, mode="r", encoding="utf-8") as tweetjs_file:
         count = 0
 
@@ -74,7 +107,8 @@ def delete(tweetjs_path, date, r, s, min_l, min_r):
         destroyer = TweetDestroyer(api)
 
         tweets = json.loads(tweetjs_file.read()[25:])
-        for row in TweetReader(tweets, date, r, s, min_l, min_r).read():
+        for row in TweetReader(tweets, date, r, s, min_l, min_r,
+                               spare_l, o_m, rt_m).read():
             destroyer.destroy(row["id_str"])
             count += 1
 
@@ -95,6 +129,12 @@ def main():
                         help="Spare tweets with more than the provided likes", type=int, default=0)
     parser.add_argument("--spare-min-retweets", dest="min_retweets",
                         help="Spare tweets with more than the provided retweets", type=int, default=0)
+    parser.add_argument("--spare-list", dest="spare_list",
+                        help="Set path for txt file of tweet IDs list to spare")
+    parser.add_argument("-om", dest="own_media", nargs='?', const=True, default=False,
+                        help="Spare your own media files from deletion")
+    parser.add_argument("-rtm", dest="rt_media", nargs='?', const=True, default=False,
+                        help="Spare your retweets with media files from deletion")
 
     args = parser.parse_args()
 
@@ -105,7 +145,8 @@ def main():
         sys.stderr.write("Twitter API credentials not set.")
         exit(1)
 
-    delete(args.file, args.date, args.restrict, args.spare_ids, args.min_likes, args.min_retweets)
+    delete(args.file, args.date, args.restrict, args.spare_ids, args.min_likes, args.min_retweets,
+           args.spare_list, args.own_media, args.rt_media)
 
 
 if __name__ == "__main__":
