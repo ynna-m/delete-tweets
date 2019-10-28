@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import json
+import re
 
 import twitter
 from dateutil.parser import parse
@@ -30,7 +31,7 @@ class TweetDestroyer(object):
 
 class TweetReader(object):
     def __init__(self, reader, date=None, restrict=None, spare=[], min_likes=0, min_retweets=0,
-                 spare_list=None, own_media=False, rt_media=False):
+                 spare_list=None, own_media=False, rt_media=False, keyword=[]):
         self.reader = reader
         if date is not None:
             self.date = parse(date, ignoretz=True).date()
@@ -44,6 +45,7 @@ class TweetReader(object):
             self.spare_list = spare_list
         self.own_media = False if own_media is None else own_media
         self.rt_media = False if rt_media is None else rt_media
+        self.keyword = keyword
 
     def read(self):
         sparedcount = 0
@@ -92,11 +94,21 @@ class TweetReader(object):
                 sparedcount = sparedcount + 1
                 continue
 
+            if self.keyword:
+                skip = False
+                tweet_text = str(row.get("full_text").encode("utf-8"))
+                for kw in self.keyword:
+                    if re.search(r"\b{}\b".format(kw), tweet_text, re.IGNORECASE) is not None:
+                        skip = True
+                        break
+                if skip is True:
+                    sparedcount = sparedcount + 1
+                    continue
             yield row
         print("Number of Tweets spared from deletion %s:" % sparedcount)
 
 
-def delete(tweetjs_path, date, r, s, min_l, min_r, spare_l, o_m, rt_m):
+def delete(tweetjs_path, date, r, s, min_l, min_r, spare_l, o_m, rt_m, k):
     with io.open(tweetjs_path, mode="r", encoding="utf-8") as tweetjs_file:
         count = 0
 
@@ -108,7 +120,7 @@ def delete(tweetjs_path, date, r, s, min_l, min_r, spare_l, o_m, rt_m):
 
         tweets = json.loads(tweetjs_file.read()[25:])
         for row in TweetReader(tweets, date, r, s, min_l, min_r,
-                               spare_l, o_m, rt_m).read():
+                               spare_l, o_m, rt_m, k).read():
             destroyer.destroy(row["id_str"])
             count += 1
 
@@ -135,6 +147,8 @@ def main():
                         help="Spare your own media files from deletion")
     parser.add_argument("-rtm", dest="rt_media", nargs='?', const=True, default=False,
                         help="Spare your retweets with media files from deletion")
+    parser.add_argument("--keyword", dest="keyword", nargs='+', default=[],
+                        help="Keyword in tweets to delete")
 
     args = parser.parse_args()
 
@@ -146,7 +160,7 @@ def main():
         exit(1)
 
     delete(args.file, args.date, args.restrict, args.spare_ids, args.min_likes, args.min_retweets,
-           args.spare_list, args.own_media, args.rt_media)
+           args.spare_list, args.own_media, args.rt_media, args.keyword)
 
 
 if __name__ == "__main__":
