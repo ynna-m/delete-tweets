@@ -125,14 +125,14 @@ docker run --env TWITTER_CONSUMER_KEY="$TWITTER_CONSUMER_KEY" \
 You could make this command more easily accessible by putting it an executable,
 and make sure that it is available in your `$PATH`.
 
-##UPDATES - PLEASE READ##
+## UPDATES - PLEASE READ##
 :warning: WARNING: BEFORE USING THE FOLLOWING ADDITIONAL OPTIONS IN THIS FORK, PLEASE BE
 WARNED THAT I CAN'T GUARANTEE COMPLETELY IF THESE OPTIONS WILL WORK ON YOUR END.
 SO USE THIS FORK WITH CAUTION. THEY SAY MASS DELETING YOUR TWEETS CAN CAUSE BUGS
 IN YOUR TIMELINE, SO AGAIN, USE THIS WITH CAUTION.
 -by Ynna M.G.
 
-###Additional Options
+### Additional Options
 1. ```-om ```  = Spare your own media tweets from deletion. It also works if you use -r
 to restrict deletion of your tweets to "reply". It will save your replies with
 any media in it.
