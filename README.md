@@ -144,8 +144,8 @@ does have a picture, video, animated_gif, etc. in it. And yet there are also ret
 that do contain the "media" key. ```-rtm``` is based on checking whether the retweet
 has a "media" key on it. So it works on some cases that has it.
 1. ```--spare-list```  = By default, uses to_save.txt file in the same directory as
-the script. This was added in case any of you guys have saved a lot of tweets
-saved and --spare-ids isn't cutting it anymore. You can change the path to your
+the script. This was added in case any of you guys have saved a lot of tweets and 
+--spare-ids isn't cutting it anymore. You can change the path to your
 own txt file using this option
 1. ```--keyword``` = is based on @sepi2048's fork, with minor modifications. Modified
 it to be able to search multiple keywords and phrases. Basically made keyword as a list
