@@ -124,3 +124,31 @@ docker run --env TWITTER_CONSUMER_KEY="$TWITTER_CONSUMER_KEY" \
 
 You could make this command more easily accessible by putting it an executable,
 and make sure that it is available in your `$PATH`.
+
+##UPDATES - PLEASE READ##
+:warning: WARNING: BEFORE USING THE FOLLOWING ADDITIONAL OPTIONS IN THIS FORK, PLEASE BE
+WARNED THAT I CAN'T GUARANTEE COMPLETELY IF THESE OPTIONS WILL WORK ON YOUR END.
+SO USE THIS FORK WITH CAUTION. THEY SAY MASS DELETING YOUR TWEETS CAN CAUSE BUGS
+IN YOUR TIMELINE, SO AGAIN, USE THIS WITH CAUTION.
+-by Ynna M.G.
+
+###Additional Options
+1. ```-om ```  = Spare your own media tweets from deletion. It also works if you use -r
+to restrict deletion of your tweets to "reply". It will save your replies with
+any media in it.
+1. ```-rtm``` = Spare retweets containing media from deletion. Sometimes works,
+sometimes doesn't. It depends on how your retweet was recorded by Twitter. Don't
+know the exact way they record, but there are retweets that don't contain the "media"
+key under the "entities" key, but the retweet itself, when you check on Twitter,
+does have a picture, video, animated_gif, etc. in it. And yet there are also retweets
+that do contain the "media" key. ```-rtm``` is based on checking whether the retweet
+has a "media" key on it. So it works on some cases that has it.
+1. ```--spare-list```  = By default, uses to_save.txt file in the same directory as
+the script. This was added in case any of you guys have saved a lot of tweets
+saved and --spare-ids isn't cutting it anymore. You can change the path to your
+own txt file using this option
+1. ```--keyword``` = is based on @sepi2048's fork, with minor modifications. Modified
+it to be able to search multiple keywords and phrases. Basically made keyword as a list
+instead. So to be able to spare tweets containing a phrase, put the phrase in
+"quotation marks". Any additional keywords or phrases can be separated by a white space
+like in --spare-ids
